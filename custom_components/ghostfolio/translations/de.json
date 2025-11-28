@@ -3,26 +3,52 @@
     "step": {
       "user": {
         "title": "Ghostfolio konfigurieren",
-        "description": "Geben Sie Ihre Ghostfolio-Instanz-Details ein"
+        "description": "Geben Sie Ihre Ghostfolio-Instanz-Details ein",
+        "data": {
+          "portfolio_name": "Portfolio-Name",
+          "base_url": "Basis-URL",
+          "access_token": "Zugangstoken",
+          "show_totals": "Gesamtportfolio anzeigen",
+          "show_accounts": "Einzelne Konten anzeigen",
+          "show_holdings": "Bestände anzeigen (Ein Sensor pro Asset)",
+          "verify_ssl": "SSL-Zertifikat verifizieren",
+          "update_interval": "Aktualisierungsintervall"
+        },
+        "data_description": {
+          "portfolio_name": "Ein benutzerfreundlicher Name für diese Portfolio-Instanz",
+          "base_url": "Die URL Ihrer Ghostfolio-Instanz (z.B. https://ihr-ghostfolio.com)",
+          "access_token": "Ihr Ghostfolio-Zugangstoken für die API-Authentifizierung",
+          "show_totals": "Sensoren für die Gesamtleistung des Portfolios erstellen",
+          "show_accounts": "Sensoren für jedes in Ghostfolio gefundene Konto erstellen",
+          "show_holdings": "Einzelne Sensoren für jede Aktie/Anlage erstellen, gruppiert nach Konto",
+          "verify_ssl": "Deaktivieren Sie dies, wenn Sie Unternehmens-Proxys wie Zscaler verwenden, die SSL-Zertifikate abfangen",
+          "update_interval": "Wie oft Portfolio-Daten aktualisiert werden sollen (in Minuten, min: 1, max: 1440)"
+        }
       },
       "reconfigure": {
         "title": "Ghostfolio neu konfigurieren",
-        "description": "Aktualisieren Sie Ihre Ghostfolio-Konfiguration"
+        "description": "Aktualisieren Sie Ihre Ghostfolio-Konfiguration",
+        "data": {
+          "portfolio_name": "Portfolio-Name",
+          "base_url": "Basis-URL",
+          "access_token": "Zugangstoken",
+          "show_totals": "Gesamtportfolio anzeigen",
+          "show_accounts": "Einzelne Konten anzeigen",
+          "show_holdings": "Bestände anzeigen (Ein Sensor pro Asset)",
+          "verify_ssl": "SSL-Zertifikat verifizieren",
+          "update_interval": "Aktualisierungsintervall"
+        },
+        "data_description": {
+          "portfolio_name": "Ein benutzerfreundlicher Name für diese Portfolio-Instanz",
+          "base_url": "Die URL Ihrer Ghostfolio-Instanz (z.B. https://ihr-ghostfolio.com)",
+          "access_token": "Ihr Ghostfolio-Zugangstoken für die API-Authentifizierung",
+          "show_totals": "Sensoren für die Gesamtleistung des Portfolios erstellen",
+          "show_accounts": "Sensoren für jedes in Ghostfolio gefundene Konto erstellen",
+          "show_holdings": "Einzelne Sensoren für jede Aktie/Anlage erstellen, gruppiert nach Konto",
+          "verify_ssl": "Deaktivieren Sie dies, wenn Sie Unternehmens-Proxys wie Zscaler verwenden, die SSL-Zertifikate abfangen",
+          "update_interval": "Wie oft Portfolio-Daten aktualisiert werden sollen (in Minuten, min: 1, max: 1440)"
+        }
       }
-    },
-    "data": {
-      "portfolio_name": "Portfolio-Name",
-      "base_url": "Basis-URL",
-      "access_token": "Zugangstoken",
-      "verify_ssl": "SSL-Zertifikat verifizieren",
-      "update_interval": "Aktualisierungsintervall"
-    },
-    "data_description": {
-      "portfolio_name": "Ein benutzerfreundlicher Name für diese Portfolio-Instanz",
-      "base_url": "Die URL Ihrer Ghostfolio-Instanz (z.B. https://ihr-ghostfolio.com)",
-      "access_token": "Ihr Ghostfolio-Zugangstoken für die API-Authentifizierung",
-      "verify_ssl": "Deaktivieren Sie dies, wenn Sie Unternehmens-Proxys wie Zscaler verwenden, die SSL-Zertifikate abfangen",
-      "update_interval": "Wie oft Portfolio-Daten aktualisiert werden sollen (in Minuten, min: 1, max: 1440)"
     },
     "error": {
       "cannot_connect": "Verbindung zu Ghostfolio fehlgeschlagen",
@@ -36,23 +62,27 @@
   "entity": {
     "sensor": {
       "current_value": {
-        "name": "Aktueller Wert"
+        "name": "Portfoliowert"
       },
       "net_performance": {
-        "name": "Nettoperformance"
+        "name": "Portfolioertrag"
       },
       "net_performance_percentage": {
-        "name": "Nettoperformance Prozentsatz"
+        "name": "Zeitgewichtete Rendite (TWR) %"
       },
       "total_investment": {
-        "name": "Gesamtinvestition"
+        "name": "Portfoliokosten"
       },
       "net_performance_with_currency": {
-        "name": "Nettoperformance mit Währungseffekt"
+        "name": "Portfolioertrag FX"
       },
       "net_performance_percentage_with_currency": {
-        "name": "Nettoperformance Prozentsatz mit Währungseffekt"
+        "name": "Zeitgewichtete Rendite (TWR) FX %"
+      },
+      "simple_gain_percentage": {
+        "name": "Einfacher Gewinn %"
       }
     }
   }
 }
+

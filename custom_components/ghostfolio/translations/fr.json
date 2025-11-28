@@ -3,26 +3,52 @@
     "step": {
       "user": {
         "title": "Configurer Ghostfolio",
-        "description": "Saisissez les détails de votre instance Ghostfolio"
+        "description": "Saisissez les détails de votre instance Ghostfolio",
+        "data": {
+          "portfolio_name": "Nom du portefeuille",
+          "base_url": "URL de base",
+          "access_token": "Token d'accès",
+          "show_totals": "Afficher les totaux du portefeuille",
+          "show_accounts": "Afficher les comptes individuels",
+          "show_holdings": "Afficher les actifs (Un capteur par actif)",
+          "verify_ssl": "Vérifier le certificat SSL",
+          "update_interval": "Intervalle de mise à jour"
+        },
+        "data_description": {
+          "portfolio_name": "Un nom convivial pour cette instance de portefeuille",
+          "base_url": "L'URL de votre instance Ghostfolio (par ex. https://votre-ghostfolio.com)",
+          "access_token": "Votre token d'accès Ghostfolio pour l'authentification API",
+          "show_totals": "Créer des capteurs pour la performance globale du portefeuille",
+          "show_accounts": "Créer des capteurs pour chaque compte individuel trouvé dans Ghostfolio",
+          "show_holdings": "Créer des capteurs individuels pour chaque action/actif, groupés par compte",
+          "verify_ssl": "Désactivez ceci si vous utilisez des proxys d'entreprise comme Zscaler qui interceptent les certificats SSL",
+          "update_interval": "Fréquence de mise à jour des données de portefeuille (en minutes, min: 1, max: 1440)"
+        }
       },
       "reconfigure": {
         "title": "Reconfigurer Ghostfolio",
-        "description": "Mettez à jour votre configuration Ghostfolio"
+        "description": "Mettez à jour votre configuration Ghostfolio",
+        "data": {
+          "portfolio_name": "Nom du portefeuille",
+          "base_url": "URL de base",
+          "access_token": "Token d'accès",
+          "show_totals": "Afficher les totaux du portefeuille",
+          "show_accounts": "Afficher les comptes individuels",
+          "show_holdings": "Afficher les actifs (Un capteur par actif)",
+          "verify_ssl": "Vérifier le certificat SSL",
+          "update_interval": "Intervalle de mise à jour"
+        },
+        "data_description": {
+          "portfolio_name": "Un nom convivial pour cette instance de portefeuille",
+          "base_url": "L'URL de votre instance Ghostfolio (par ex. https://votre-ghostfolio.com)",
+          "access_token": "Votre token d'accès Ghostfolio pour l'authentification API",
+          "show_totals": "Créer des capteurs pour la performance globale du portefeuille",
+          "show_accounts": "Créer des capteurs pour chaque compte individuel trouvé dans Ghostfolio",
+          "show_holdings": "Créer des capteurs individuels pour chaque action/actif, groupés par compte",
+          "verify_ssl": "Désactivez ceci si vous utilisez des proxys d'entreprise comme Zscaler qui interceptent les certificats SSL",
+          "update_interval": "Fréquence de mise à jour des données de portefeuille (en minutes, min: 1, max: 1440)"
+        }
       }
-    },
-    "data": {
-      "portfolio_name": "Nom du portefeuille",
-      "base_url": "URL de base",
-      "access_token": "Token d'accès",
-      "verify_ssl": "Vérifier le certificat SSL",
-      "update_interval": "Intervalle de mise à jour"
-    },
-    "data_description": {
-      "portfolio_name": "Un nom convivial pour cette instance de portefeuille",
-      "base_url": "L'URL de votre instance Ghostfolio (par ex. https://votre-ghostfolio.com)",
-      "access_token": "Votre token d'accès Ghostfolio pour l'authentification API",
-      "verify_ssl": "Désactivez ceci si vous utilisez des proxys d'entreprise comme Zscaler qui interceptent les certificats SSL",
-      "update_interval": "Fréquence de mise à jour des données de portefeuille (en minutes, min: 1, max: 1440)"
     },
     "error": {
       "cannot_connect": "Échec de la connexion à Ghostfolio",
@@ -36,22 +62,25 @@
   "entity": {
     "sensor": {
       "current_value": {
-        "name": "Valeur actuelle"
+        "name": "Valeur du portefeuille"
       },
       "net_performance": {
-        "name": "Performance nette"
+        "name": "Gain du portefeuille"
       },
       "net_performance_percentage": {
-        "name": "Pourcentage de performance nette"
+        "name": "Rendement pondéré (TWR) %"
       },
       "total_investment": {
-        "name": "Investissement total"
+        "name": "Coût du portefeuille"
       },
       "net_performance_with_currency": {
-        "name": "Performance nette avec effet de change"
+        "name": "Gain du portefeuille (Devises)"
       },
       "net_performance_percentage_with_currency": {
-        "name": "Pourcentage de performance nette avec effet de change"
+        "name": "Rendement pondéré (TWR) % (Devises)"
+      },
+      "simple_gain_percentage": {
+        "name": "Gain simple %"
       }
     }
   }
