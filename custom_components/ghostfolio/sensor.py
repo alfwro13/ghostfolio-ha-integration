@@ -502,7 +502,7 @@ class GhostfolioHoldingSensor(GhostfolioBaseSensor):
         base_currency = self.native_unit_of_measurement  # e.g., GBP
 
         # 2. Extract Raw Values
-        quantity = float(data.get("quantity", 0))
+        quantity = float(data.get("quantity") or 0)
         investment_in_base = float(data.get("investment", 0))  # Total Cost (Base)
         current_value_in_base = float(
             data.get("valueInBaseCurrency") or data.get("value", 0)
