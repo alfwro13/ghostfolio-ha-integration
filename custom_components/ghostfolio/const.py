@@ -11,6 +11,7 @@ CONF_PORTFOLIO_NAME = "portfolio_name"
 CONF_SHOW_TOTALS = "show_totals"
 CONF_SHOW_ACCOUNTS = "show_accounts"
 CONF_SHOW_HOLDINGS = "show_holdings"
+CONF_SHOW_WATCHLIST = "show_watchlist"
 
 # Default values
 DEFAULT_NAME = "Ghostfolio"
