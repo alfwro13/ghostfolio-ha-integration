@@ -133,17 +133,40 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                                 history = market_data_resp.get("marketData", [])
                                 
                                 if history and isinstance(history, list) and len(history) > 0:
-                                    # 1. Get Latest Price
-                                    latest_entry = history[-1]
-                                    current_price = latest_entry.get("marketPrice") or 0
                                     
-                                    item["marketPrice"] = current_price
-                                    item["marketDate"] = latest_entry.get("date")
+                                    # --- SMART LOOKBACK LOGIC ---
+                                    # Start from the end (latest) and look backwards.
+                                    # If the price is identical to the previous day, assume it's a weekend filler and keep looking back.
+                                    # We limit the lookback to 5 days to avoid infinite loops on flat stocks.
+                                    
+                                    latest_idx = -1
+                                    max_lookback = 5
+                                    lookback_count = 0
+                                    
+                                    current_entry = history[latest_idx]
+                                    current_price = float(current_entry.get("marketPrice") or 0)
 
-                                    # 2. Calculate 24h Change (Latest - Previous)
-                                    if len(history) >= 2:
-                                        prev_entry = history[-2]
-                                        prev_price = prev_entry.get("marketPrice") or 0
+                                    # Try to find the last meaningful change
+                                    while lookback_count < max_lookback and abs(latest_idx) < len(history):
+                                        prev_idx = latest_idx - 1
+                                        prev_entry = history[prev_idx]
+                                        prev_price = float(prev_entry.get("marketPrice") or 0)
+                                        
+                                        # If price is different (or we hit a 0), we found the movement
+                                        if current_price != prev_price:
+                                            break
+                                        
+                                        # If identical, step back one day
+                                        latest_idx -= 1
+                                        lookback_count += 1
+                                        # Use the older entry as the "current" reference for the date/state
+                                        current_entry = history[latest_idx]
+
+                                    # Now calculate stats based on the index we settled on
+                                    # (latest_idx is the day we are reporting, prev_idx is the day before it)
+                                    if abs(latest_idx - 1) <= len(history):
+                                        prev_entry = history[latest_idx - 1]
+                                        prev_price = float(prev_entry.get("marketPrice") or 0)
                                         
                                         if prev_price > 0:
                                             change_val = current_price - prev_price
@@ -151,6 +174,10 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                                             
                                             item["marketChange"] = change_val
                                             item["marketChangePercentage"] = change_pct
+                                    
+                                    # Always set the price and date to the detected "Active" day
+                                    item["marketPrice"] = current_price
+                                    item["marketDate"] = current_entry.get("date")
                                 
                                 # B. Extract Currency/Class from 'assetProfile' (if missing in summary)
                                 profile = market_data_resp.get("assetProfile", {})
