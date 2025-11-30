@@ -78,6 +78,12 @@ class GhostfolioAPI:
             params=params
         )
 
+    async def get_watchlist(self) -> list[dict[str, Any]]:
+        """Get watchlist items."""
+        return await self._make_authenticated_request(
+            f"{self.base_url}/api/v1/watchlist"
+        )
+    
     async def _make_authenticated_request(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Helper to make authenticated requests with retry logic."""
         if not self.auth_token:
