@@ -15,7 +15,8 @@ from .api import GhostfolioAPI
 from .const import (
     CONF_UPDATE_INTERVAL, 
     DEFAULT_UPDATE_INTERVAL, 
-    CONF_SHOW_HOLDINGS, 
+    CONF_SHOW_HOLDINGS,
+    CONF_SHOW_WATCHLIST,
     DOMAIN
 )
 
@@ -76,9 +77,11 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
             # 3. Fetch Data per Account
             account_performances = {}
             holdings_by_account = {}
+            watchlist_items = []
             
-            # Check if holdings are enabled in config
+            # Check config options
             show_holdings = self.entry.data.get(CONF_SHOW_HOLDINGS, True)
+            show_watchlist = self.entry.data.get(CONF_SHOW_WATCHLIST, True)
 
             for account in accounts_list:
                 if account.get("isExcluded"):
@@ -103,11 +106,24 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                     except Exception as e:
                         _LOGGER.warning(f"Failed to fetch holdings for account {account['name']}: {e}")
 
+            # 4. Fetch Watchlist (if enabled)
+            if show_watchlist:
+                try:
+                    wl_response = await self.api.get_watchlist()
+                    # Handle response being list or dict depending on API version
+                    if isinstance(wl_response, list):
+                        watchlist_items = wl_response
+                    elif isinstance(wl_response, dict):
+                        watchlist_items = wl_response.get("watchlist", []) or wl_response.get("items", [])
+                except Exception as e:
+                    _LOGGER.warning(f"Failed to fetch watchlist: {e}")
+
             return {
                 "accounts": accounts_data,
                 "global_performance": global_performance,
                 "account_performances": account_performances,
-                "account_holdings": holdings_by_account # New data structure
+                "account_holdings": holdings_by_account,
+                "watchlist": watchlist_items
             }
 
         except Exception as err:
