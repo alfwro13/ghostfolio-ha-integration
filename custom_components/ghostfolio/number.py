@@ -84,7 +84,6 @@ async def async_setup_entry(
                     unique_id = f"ghostfolio_watchlist_limit_{limit_type}_{slugify(symbol)}_{config_entry.entry_id}"
                     
                     if unique_id not in known_ids:
-                        # Use a static ID/Name for the Watchlist "Account"
                         new_entities.append(
                             GhostfolioLimitNumber(
                                 coordinator, 
@@ -135,14 +134,12 @@ class GhostfolioLimitNumber(CoordinatorEntity, RestoreNumber):
         
         self.portfolio_name = config_entry.data.get(CONF_PORTFOLIO_NAME, "Ghostfolio")
         
-        # Device Info: Create a device per Account (ISA, Watchlist, etc.)
-        # This forces the Entity ID to be number.accountname_symbol_limit
+        # Device Info: Create a device per Account
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"ghostfolio_account_{account_id}_{config_entry.entry_id}")},
             "name": account_name, 
             "manufacturer": "Ghostfolio",
             "model": "Account Portfolio",
-            # Link this account device to the main Portfolio hub
             "via_device": (DOMAIN, f"ghostfolio_portfolio_{config_entry.entry_id}"),
         }
 
