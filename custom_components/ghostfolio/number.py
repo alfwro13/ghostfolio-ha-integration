@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -126,6 +127,9 @@ class GhostfolioLimitNumber(CoordinatorEntity, RestoreNumber):
         self.config_entry = config_entry
         self._attr_unique_id = unique_id
         
+        # Store account name for the attribute
+        self.account_name = account_name
+        
         # Entity Name: "AAPL - Low Limit"
         self._attr_name = f"{symbol} - {limit_type.capitalize()} Limit"
         
@@ -141,6 +145,13 @@ class GhostfolioLimitNumber(CoordinatorEntity, RestoreNumber):
             "manufacturer": "Ghostfolio",
             "model": "Account Portfolio",
             "via_device": (DOMAIN, f"ghostfolio_portfolio_{config_entry.entry_id}"),
+        }
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return entity specific state attributes."""
+        return {
+            "account": self.account_name,
         }
 
     async def async_added_to_hass(self) -> None:
