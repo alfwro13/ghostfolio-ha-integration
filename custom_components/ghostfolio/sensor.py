@@ -183,6 +183,37 @@ class GhostfolioBaseSensor(CoordinatorEntity, SensorEntity):
             "performance", {}
         )
 
+    # --- HEALTH CHECKS ---
+
+    def _is_provider_down(self, data_source: str | None) -> bool:
+        """Check if a specific data source is down."""
+        if not data_source:
+            return False
+        if not self.coordinator.data:
+            return False
+            
+        providers = self.coordinator.data.get("providers", {})
+        provider_info = providers.get(data_source)
+        # If provider is tracked and inactive -> Down
+        if provider_info and not provider_info.get("is_active", True):
+            return True
+        return False
+
+    @property
+    def is_portfolio_healthy(self) -> bool:
+        """Return False if ANY active holding in the portfolio uses a down provider."""
+        if not self.coordinator.data:
+            return True
+        
+        all_holdings = self.coordinator.data.get("account_holdings", {})
+        for holdings in all_holdings.values():
+            for h in holdings:
+                # Check active quantity
+                if float(h.get("quantity") or 0) > 0:
+                     if self._is_provider_down(h.get("dataSource")):
+                         return False
+        return True
+
 
 # --- GLOBAL SENSORS ---
 
@@ -198,6 +229,8 @@ class GhostfolioCurrentValueSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         return self.global_performance_data.get("currentValueInBaseCurrency")
 
     @property
@@ -218,6 +251,8 @@ class GhostfolioNetPerformanceSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         return self.global_performance_data.get("netPerformance")
 
 class GhostfolioTimeWeightedReturnSensor(GhostfolioBaseSensor):
@@ -236,6 +271,8 @@ class GhostfolioTimeWeightedReturnSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         percent_value = self.global_performance_data.get("netPerformancePercentage")
         return round(percent_value * 100, 2) if percent_value is not None else None
 
@@ -251,6 +288,8 @@ class GhostfolioTotalInvestmentSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         return self.global_performance_data.get("totalInvestment")
 
 class GhostfolioTimeWeightedReturnFXSensor(GhostfolioBaseSensor):
@@ -269,6 +308,8 @@ class GhostfolioTimeWeightedReturnFXSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         percent_value = self.global_performance_data.get("netPerformancePercentageWithCurrencyEffect")
         return round(percent_value * 100, 2) if percent_value is not None else None
 
@@ -284,6 +325,8 @@ class GhostfolioNetPerformanceWithCurrencySensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         return self.global_performance_data.get("netPerformanceWithCurrencyEffect")
 
 class GhostfolioSimpleGainPercentSensor(GhostfolioBaseSensor):
@@ -302,6 +345,8 @@ class GhostfolioSimpleGainPercentSensor(GhostfolioBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_portfolio_healthy:
+            return None
         current_value = self.global_performance_data.get("currentValueInBaseCurrency")
         total_investment = self.global_performance_data.get("totalInvestment")
         if current_value is None or total_investment is None or total_investment == 0:
@@ -334,6 +379,21 @@ class GhostfolioAccountBaseSensor(GhostfolioBaseSensor):
         performances = self.coordinator.data.get("account_performances", {})
         return performances.get(self.account_id, {}).get("performance", {})
 
+    @property
+    def is_account_healthy(self) -> bool:
+        """Return False if ANY active holding in THIS account uses a down provider."""
+        if not self.coordinator.data:
+            return True
+
+        all_holdings = self.coordinator.data.get("account_holdings", {})
+        account_holdings = all_holdings.get(self.account_id, [])
+        
+        for h in account_holdings:
+            if float(h.get("quantity") or 0) > 0:
+                 if self._is_provider_down(h.get("dataSource")):
+                     return False
+        return True
+
 class GhostfolioAccountValueSensor(GhostfolioAccountBaseSensor):
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
@@ -346,6 +406,8 @@ class GhostfolioAccountValueSensor(GhostfolioAccountBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_account_healthy:
+            return None
         return self.account_performance_data.get("currentValueInBaseCurrency")
 
 class GhostfolioAccountCostSensor(GhostfolioAccountBaseSensor):
@@ -360,6 +422,8 @@ class GhostfolioAccountCostSensor(GhostfolioAccountBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_account_healthy:
+            return None
         return self.account_performance_data.get("totalInvestment")
 
 class GhostfolioAccountPerformanceSensor(GhostfolioAccountBaseSensor):
@@ -374,6 +438,8 @@ class GhostfolioAccountPerformanceSensor(GhostfolioAccountBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_account_healthy:
+            return None
         return self.account_performance_data.get("netPerformance")
 
 class GhostfolioAccountTWRSensor(GhostfolioAccountBaseSensor):
@@ -392,6 +458,8 @@ class GhostfolioAccountTWRSensor(GhostfolioAccountBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_account_healthy:
+            return None
         percent_value = self.account_performance_data.get("netPerformancePercentage")
         return round(percent_value * 100, 2) if percent_value is not None else None
 
@@ -411,6 +479,8 @@ class GhostfolioAccountSimpleGainSensor(GhostfolioAccountBaseSensor):
 
     @property
     def native_value(self) -> float | None:
+        if not self.is_account_healthy:
+            return None
         current_value = self.account_performance_data.get("currentValueInBaseCurrency")
         total_investment = self.account_performance_data.get("totalInvestment")
         if current_value is None or total_investment is None or total_investment == 0:
@@ -465,6 +535,13 @@ class GhostfolioHoldingSensor(GhostfolioBaseSensor):
         data = self.holding_data
         if not data:
             return None
+            
+        # --- Provider Check ---
+        # If the holding's data source is reported as Down, return None (Unknown)
+        if self._is_provider_down(data.get("dataSource")):
+             return None
+        # ----------------------
+
         return data.get("valueInBaseCurrency") or data.get("value")
 
     @property
@@ -512,6 +589,7 @@ class GhostfolioHoldingSensor(GhostfolioBaseSensor):
             "gain_pct": round(gain_pct, 2),
             "trend_vs_buy": trend,
             "asset_class": data.get("assetClass"),
+            "data_source": data.get("dataSource"),
         }
 
 
@@ -559,6 +637,12 @@ class GhostfolioWatchlistSensor(GhostfolioBaseSensor):
         data = self.item_data
         if not data:
             return None
+            
+        # --- Provider Check ---
+        if self._is_provider_down(self.data_source):
+             return None
+        # ----------------------
+
         return data.get("marketPrice")
 
     @property
