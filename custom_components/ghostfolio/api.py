@@ -90,6 +90,32 @@ class GhostfolioAPI:
             f"{self.base_url}/api/v1/market-data/{data_source}/{symbol}"
         )
 
+    async def get_provider_health(self, provider_code: str) -> dict[str, Any]:
+        """Check the health status of a data provider."""
+        url = f"{self.base_url}/api/v1/health/data-provider/{provider_code}"
+        
+        if not self.auth_token:
+            await self.authenticate()
+            
+        headers = {"Authorization": f"Bearer {self.auth_token}"}
+        
+        try:
+            # We use the raw session here because we want to capture 503/404 as valid states
+            # instead of raising an exception.
+            async with self._get_session().get(url, headers=headers) as response:
+                return {
+                    "code": provider_code,
+                    "status_code": response.status,
+                    "is_active": response.status == 200
+                }
+        except Exception as e:
+            _LOGGER.debug(f"Health check failed for {provider_code}: {e}")
+            return {
+                "code": provider_code,
+                "status_code": 0,
+                "is_active": False
+            }
+
     async def _make_authenticated_request(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Helper to make authenticated requests with retry logic."""
         if not self.auth_token:
