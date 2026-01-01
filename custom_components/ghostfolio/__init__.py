@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -17,12 +18,13 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL, 
     CONF_SHOW_HOLDINGS,
     CONF_SHOW_WATCHLIST,
-    DOMAIN
+    DOMAIN,
+    DATA_PROVIDERS
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER, Platform.BINARY_SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -66,6 +68,20 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from Ghostfolio API."""
+        
+        # Initialize default "Offline" data structure
+        # If the API call fails, we return this so sensors show "Disconnected" or "Unknown"
+        # rather than becoming completely Unavailable.
+        data = {
+            "server_online": False,
+            "accounts": {},
+            "global_performance": {},
+            "account_performances": {},
+            "account_holdings": {},
+            "watchlist": [],
+            "providers": {}
+        }
+
         try:
             # 1. Fetch List of Accounts
             accounts_data = await self.api.get_accounts()
@@ -122,23 +138,12 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                         symbol = item.get("symbol")
                         data_source = item.get("dataSource")
                         
-                        # Only fetch if we have valid identifiers
                         if symbol and data_source:
                             try:
-                                # Fetch detailed market data for this symbol
                                 market_data_resp = await self.api.get_market_data(data_source, symbol)
-                                
-                                # A. Extract Price & History from 'marketData'
-                                # marketData is a list of objects sorted by date: [ {date:..., marketPrice:...}, ... ]
                                 history = market_data_resp.get("marketData", [])
                                 
                                 if history and isinstance(history, list) and len(history) > 0:
-                                    
-                                    # --- SMART LOOKBACK LOGIC ---
-                                    # Start from the end (latest) and look backwards.
-                                    # If the price is identical to the previous day, assume it's a weekend filler and keep looking back.
-                                    # We limit the lookback to 5 days to avoid infinite loops on flat stocks.
-                                    
                                     latest_idx = -1
                                     max_lookback = 5
                                     lookback_count = 0
@@ -146,40 +151,28 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                                     current_entry = history[latest_idx]
                                     current_price = float(current_entry.get("marketPrice") or 0)
 
-                                    # Try to find the last meaningful change
                                     while lookback_count < max_lookback and abs(latest_idx) < len(history):
                                         prev_idx = latest_idx - 1
                                         prev_entry = history[prev_idx]
                                         prev_price = float(prev_entry.get("marketPrice") or 0)
-                                        
-                                        # If price is different (or we hit a 0), we found the movement
                                         if current_price != prev_price:
                                             break
-                                        
-                                        # If identical, step back one day
                                         latest_idx -= 1
                                         lookback_count += 1
-                                        # Use the older entry as the "current" reference for the date/state
                                         current_entry = history[latest_idx]
 
-                                    # Now calculate stats based on the index we settled on
-                                    # (latest_idx is the day we are reporting, prev_idx is the day before it)
                                     if abs(latest_idx - 1) <= len(history):
                                         prev_entry = history[latest_idx - 1]
                                         prev_price = float(prev_entry.get("marketPrice") or 0)
-                                        
                                         if prev_price > 0:
                                             change_val = current_price - prev_price
                                             change_pct = (change_val / prev_price) * 100
-                                            
                                             item["marketChange"] = change_val
                                             item["marketChangePercentage"] = change_pct
                                     
-                                    # Always set the price and date to the detected "Active" day
                                     item["marketPrice"] = current_price
                                     item["marketDate"] = current_entry.get("date")
                                 
-                                # B. Extract Currency/Class from 'assetProfile' (if missing in summary)
                                 profile = market_data_resp.get("assetProfile", {})
                                 if not item.get("currency"):
                                     item["currency"] = profile.get("currency")
@@ -194,13 +187,28 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
                 except Exception as e:
                     _LOGGER.warning(f"Failed to fetch watchlist: {e}")
 
-            return {
-                "accounts": accounts_data,
-                "global_performance": global_performance,
-                "account_performances": account_performances,
-                "account_holdings": holdings_by_account,
-                "watchlist": watchlist_items
-            }
+            # 5. Fetch Provider Health (Parallel)
+            provider_results = {}
+            async def _fetch_health(code):
+                return await self.api.get_provider_health(code)
+
+            health_results = await asyncio.gather(*[_fetch_health(p) for p in DATA_PROVIDERS])
+            for res in health_results:
+                provider_results[res["code"]] = res
+
+            # --- SUCCESS ---
+            data["server_online"] = True
+            data["accounts"] = accounts_data
+            data["global_performance"] = global_performance
+            data["account_performances"] = account_performances
+            data["account_holdings"] = holdings_by_account
+            data["watchlist"] = watchlist_items
+            data["providers"] = provider_results
+            
+            return data
 
         except Exception as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
+            # We catch the error to keep the 'server' sensor alive (but Disconnected)
+            # Other sensors will likely report Unknown/None because the data dicts are empty.
+            _LOGGER.warning(f"Ghostfolio API update failed: {err}")
+            return data
