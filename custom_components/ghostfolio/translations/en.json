@@ -86,6 +86,14 @@
       "simple_gain_percentage": {
         "name": "Simple Gain %"
       }
+    },
+    "binary_sensor": {
+      "data_provider": {
+        "state": {
+          "on": "Available",
+          "off": "Unavailable"
+        }
+      }
     }
   }
 }
