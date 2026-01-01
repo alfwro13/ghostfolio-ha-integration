@@ -10,12 +10,16 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers import entity_registry as er
+from homeassistant.util import slugify
 
 
 from .api import GhostfolioAPI
 from .const import (
     CONF_UPDATE_INTERVAL, 
     DEFAULT_UPDATE_INTERVAL, 
+    CONF_SHOW_TOTALS,
+    CONF_SHOW_ACCOUNTS,
     CONF_SHOW_HOLDINGS,
     CONF_SHOW_WATCHLIST,
     DOMAIN,
@@ -24,7 +28,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.NUMBER, Platform.BINARY_SENSOR, Platform.BUTTON]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -70,8 +74,6 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from Ghostfolio API."""
         
         # Initialize default "Offline" data structure
-        # If the API call fails, we return this so sensors show "Disconnected" or "Unknown"
-        # rather than becoming completely Unavailable.
         data = {
             "server_online": False,
             "accounts": {},
@@ -208,7 +210,96 @@ class GhostfolioDataUpdateCoordinator(DataUpdateCoordinator):
             return data
 
         except Exception as err:
-            # We catch the error to keep the 'server' sensor alive (but Disconnected)
-            # Other sensors will likely report Unknown/None because the data dicts are empty.
             _LOGGER.warning(f"Ghostfolio API update failed: {err}")
             return data
+
+    async def async_prune_orphans(self) -> None:
+        """Remove entities that no longer exist in Ghostfolio."""
+        if not self.data or not self.data.get("server_online", False):
+            _LOGGER.warning("Cannot prune entities while Ghostfolio is offline.")
+            return
+
+        entity_registry = er.async_get(self.hass)
+        entries = er.async_entries_for_config_entry(entity_registry, self.entry.entry_id)
+        
+        valid_unique_ids = set()
+        entry_id = self.entry.entry_id
+        
+        # 1. Global Sensors
+        if self.entry.data.get(CONF_SHOW_TOTALS, True):
+            valid_unique_ids.add(f"ghostfolio_current_value_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_net_performance_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_net_performance_percent_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_total_investment_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_net_performance_percent_with_currency_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_net_performance_with_currency_{entry_id}")
+            valid_unique_ids.add(f"ghostfolio_simple_gain_percent_{entry_id}")
+
+        # 2. Binary Sensors (Server + Providers)
+        valid_unique_ids.add(f"ghostfolio_server_status_{entry_id}")
+        for provider in DATA_PROVIDERS:
+            valid_unique_ids.add(f"ghostfolio_provider_{provider.lower()}_{entry_id}")
+
+        # 3. Prune Button
+        valid_unique_ids.add(f"ghostfolio_prune_button_{entry_id}")
+
+        # 4. Accounts
+        show_accounts = self.entry.data.get(CONF_SHOW_ACCOUNTS, True)
+        accounts_list = self.data.get("accounts", {}).get("accounts", [])
+        
+        for account in accounts_list:
+            if account.get("isExcluded"):
+                continue
+            
+            account_id = account["id"]
+            if show_accounts:
+                valid_unique_ids.add(f"ghostfolio_account_value_{account_id}_{entry_id}")
+                valid_unique_ids.add(f"ghostfolio_account_cost_{account_id}_{entry_id}")
+                valid_unique_ids.add(f"ghostfolio_account_perf_{account_id}_{entry_id}")
+                valid_unique_ids.add(f"ghostfolio_account_perf_pct_{account_id}_{entry_id}")
+                valid_unique_ids.add(f"ghostfolio_account_simple_gain_{account_id}_{entry_id}")
+
+        # 5. Holdings (Sensors + Numbers)
+        if self.entry.data.get(CONF_SHOW_HOLDINGS, True):
+            all_holdings = self.data.get("account_holdings", {})
+            # Need to iterate per account to match the ID generation logic
+            for account in accounts_list:
+                if account.get("isExcluded"):
+                    continue
+                account_id = account["id"]
+                holdings = all_holdings.get(account_id, [])
+                
+                for h in holdings:
+                    # Only active holdings generate sensors
+                    if float(h.get("quantity") or 0) > 0:
+                        symbol = h.get("symbol")
+                        safe_symbol = slugify(symbol)
+                        
+                        # Sensor
+                        valid_unique_ids.add(f"ghostfolio_holding_{account_id}_{safe_symbol}_{entry_id}")
+                        # Numbers
+                        valid_unique_ids.add(f"ghostfolio_limit_low_{account_id}_{safe_symbol}_{entry_id}")
+                        valid_unique_ids.add(f"ghostfolio_limit_high_{account_id}_{safe_symbol}_{entry_id}")
+
+        # 6. Watchlist (Sensors + Numbers)
+        if self.entry.data.get(CONF_SHOW_WATCHLIST, True):
+            watchlist = self.data.get("watchlist", [])
+            for item in watchlist:
+                symbol = item.get("symbol")
+                safe_symbol = slugify(symbol)
+                
+                # Sensor
+                valid_unique_ids.add(f"ghostfolio_watchlist_{safe_symbol}_{entry_id}")
+                # Numbers
+                valid_unique_ids.add(f"ghostfolio_watchlist_limit_low_{safe_symbol}_{entry_id}")
+                valid_unique_ids.add(f"ghostfolio_watchlist_limit_high_{safe_symbol}_{entry_id}")
+
+        # Execute Prune
+        removed_count = 0
+        for entity_entry in entries:
+            if entity_entry.unique_id not in valid_unique_ids:
+                _LOGGER.info(f"Removing orphaned entity: {entity_entry.entity_id} (unique_id: {entity_entry.unique_id})")
+                entity_registry.async_remove(entity_entry.entity_id)
+                removed_count += 1
+        
+        _LOGGER.info(f"Prune complete. Removed {removed_count} orphaned entities.")
