@@ -15,6 +15,7 @@ This integration automatically detects your portfolio's base currency and offers
 - **Price Alerts:** Configurable High/Low limit numbers for every asset to trigger automations.
 - **Diagnostic Sensors:** Monitor the connection status of your Ghostfolio server and its data providers.
 - **Smart Health Checks:** Automatically detects if a data provider (e.g., Yahoo Finance) is down and marks affected sensors as `Unknown` instead of reporting erroneous zero values.
+- **Entity Cleanup:** Built-in tool to remove old or sold assets from Home Assistant.
 
 ### 1. Global Portfolio Sensors
 - **Portfolio Value**: The current total market value of your portfolio.
@@ -61,11 +62,12 @@ These entities are grouped into **Devices** based on their Account (e.g., "ISA",
 - **Friendly Name**: `AAPL - High Limit`
 - **Entity ID**: `number.isa_aapl_high_limit`
 
-### 6. Diagnostic Sensors
-To help you troubleshoot issues, the integration provides binary sensors that track the health of the system. You can find these on the main Portfolio Device page in Home Assistant.
+### 6. Diagnostic Sensors & Tools
+To help you troubleshoot issues and maintain your setup, the integration provides diagnostic entities. You can find these on the main Portfolio Device page in Home Assistant.
 
 - **Ghostfolio Server**: Indicates if your Ghostfolio instance is reachable (`Connected` / `Disconnected`).
 - **Data Provider Status**: Individual sensors for each data provider (e.g., `Yahoo Status`, `Coingecko Status`) showing if they are `Available` or `Unavailable`.
+- **Prune Orphaned Entities**: A button that, when pressed, scans your Home Assistant registry and removes any Ghostfolio entities (such as sold assets or removed watchlist items) that are no longer returned by the API.
 
 ## Installation
 
