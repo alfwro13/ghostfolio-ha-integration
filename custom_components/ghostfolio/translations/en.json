@@ -94,6 +94,11 @@
           "off": "Unavailable"
         }
       }
+    },
+    "button": {
+      "prune_orphans": {
+        "name": "Prune Orphaned Entities"
+      }
     }
   }
 }
