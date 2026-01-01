@@ -11,6 +11,7 @@
           "show_totals": "Afficher les totaux du portefeuille",
           "show_accounts": "Afficher les comptes individuels",
           "show_holdings": "Afficher les actifs (Un capteur par actif)",
+          "show_watchlist": "Afficher la liste de surveillance",
           "verify_ssl": "Vérifier le certificat SSL",
           "update_interval": "Intervalle de mise à jour"
         },
@@ -21,6 +22,7 @@
           "show_totals": "Créer des capteurs pour la performance globale du portefeuille",
           "show_accounts": "Créer des capteurs pour chaque compte individuel trouvé dans Ghostfolio",
           "show_holdings": "Créer des capteurs individuels pour chaque action/actif, groupés par compte",
+          "show_watchlist": "Créer des capteurs pour les éléments de votre liste de surveillance Ghostfolio",
           "verify_ssl": "Désactivez ceci si vous utilisez des proxys d'entreprise comme Zscaler qui interceptent les certificats SSL",
           "update_interval": "Fréquence de mise à jour des données de portefeuille (en minutes, min: 1, max: 1440)"
         }
@@ -35,6 +37,7 @@
           "show_totals": "Afficher les totaux du portefeuille",
           "show_accounts": "Afficher les comptes individuels",
           "show_holdings": "Afficher les actifs (Un capteur par actif)",
+          "show_watchlist": "Afficher la liste de surveillance",
           "verify_ssl": "Vérifier le certificat SSL",
           "update_interval": "Intervalle de mise à jour"
         },
@@ -45,6 +48,7 @@
           "show_totals": "Créer des capteurs pour la performance globale du portefeuille",
           "show_accounts": "Créer des capteurs pour chaque compte individuel trouvé dans Ghostfolio",
           "show_holdings": "Créer des capteurs individuels pour chaque action/actif, groupés par compte",
+          "show_watchlist": "Créer des capteurs pour les éléments de votre liste de surveillance Ghostfolio",
           "verify_ssl": "Désactivez ceci si vous utilisez des proxys d'entreprise comme Zscaler qui interceptent les certificats SSL",
           "update_interval": "Fréquence de mise à jour des données de portefeuille (en minutes, min: 1, max: 1440)"
         }
@@ -81,6 +85,19 @@
       },
       "simple_gain_percentage": {
         "name": "Gain simple %"
+      }
+    },
+    "binary_sensor": {
+      "data_provider": {
+        "state": {
+          "on": "Disponible",
+          "off": "Indisponible"
+        }
+      }
+    },
+    "button": {
+      "prune_orphans": {
+        "name": "Nettoyer les entités orphelines"
       }
     }
   }
