@@ -687,13 +687,21 @@ class GhostfolioWatchlistSensor(GhostfolioBaseSensor):
              return None
         # ----------------------
 
-        return data.get("marketPrice")
+        # GBp Handling: Convert to GBP
+        val = data.get("marketPrice")
+        if data.get("currency") == "GBp" and val is not None:
+            return val / 100
+
+        return val
 
     @property
     def native_unit_of_measurement(self) -> str | None:
         data = self.item_data
         if not data:
             return None
+        # GBp Handling: Show as GBP
+        if data.get("currency") == "GBp":
+            return "GBP"
         return data.get("currency")
 
     @property
@@ -706,7 +714,14 @@ class GhostfolioWatchlistSensor(GhostfolioBaseSensor):
         registry = er.async_get(self.hass)
         entry_id = self.config_entry.entry_id
         safe_symbol = slugify(self.symbol)
-        current_price = data.get("marketPrice") or 0
+        
+        # GBp Handling for attributes and limit check
+        is_gbp_conversion = (data.get("currency") == "GBp")
+        raw_price = data.get("marketPrice") or 0
+        current_price = (raw_price / 100) if is_gbp_conversion else raw_price
+        
+        raw_change = data.get("marketChange")
+        market_change = (raw_change / 100) if (is_gbp_conversion and raw_change is not None) else raw_change
 
         # Helper to check a limit against CURRENT SENSOR VALUE (Price for Watchlist)
         def get_limit_status(limit_type, compare_op):
@@ -745,11 +760,11 @@ class GhostfolioWatchlistSensor(GhostfolioBaseSensor):
             "ticker": self.symbol,
             "data_source": self.data_source,
             "asset_class": data.get("assetClass"),
-            "market_price": data.get("marketPrice"),
-            "currency": data.get("currency"),
+            "market_price": current_price,
+            "currency": "GBP" if is_gbp_conversion else data.get("currency"),
             "trend_50d": data.get("trend50d"),
             "trend_200d": data.get("trend200d"),
-            "market_change_24h": data.get("marketChange"),
+            "market_change_24h": market_change,
             "market_change_pct_24h": data.get("marketChangePercentage"),
             # Limit Attributes
             "low_limit_set": low_val,
