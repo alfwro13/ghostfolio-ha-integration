@@ -36,11 +36,23 @@ Sensors are created for each of your Ghostfolio accounts (excluding hidden ones)
 - **[Account Name] Simple Gain %**: Simple percentage gain/loss for the specific account.
 - **[Account Name] Time-Weighted Return %**: Time-Weighted Return percentage for the specific account.
 
+### 2. Per-Account Sensors
+Sensors are created for each of your Ghostfolio accounts (excluding hidden ones):
+- **[Account Name] Value**: Current market value of the specific account.
+- **[Account Name] Cost**: Total investment in the specific account.
+- **[Account Name] Gain**: Absolute gain/loss for the specific account.
+- **[Account Name] Simple Gain %**: Simple percentage gain/loss for the specific account.
+- **[Account Name] Time-Weighted Return %**: Time-Weighted Return percentage for the specific account.
+
 ### 3. Per-Holding Sensors (Assets)
 Track every individual asset in your portfolio with a dedicated sensor:
 - **Sensor State**: Total market value of the holding in your base currency.
 - **Friendly Name**: The ticker symbol (e.g., "AAPL", "VWRL.AS").
-- **Attributes**: `market_price`, `average_buy_price`, `number_of_shares`, `gain_value`, `gain_pct`, `trend_vs_buy`.
+- **Attributes**: 
+  - `market_price`, `average_buy_price`, `number_of_shares`
+  - `gain_value`, `gain_pct`, `trend_vs_buy`
+  - `low_limit_set`, `low_limit_reached`
+  - `high_limit_set`, `high_limit_reached`
 
 *Note: If the data provider for a specific holding is down, its sensor will report `Unknown`.*
 
@@ -48,15 +60,46 @@ Track every individual asset in your portfolio with a dedicated sensor:
 Track items from your Ghostfolio Watchlist even if you don't own them yet.
 - **Sensor State**: Current market price.
 - **Friendly Name**: The ticker symbol (e.g., "TSLA").
-- **Attributes**: `market_change_24h`, `market_change_pct_24h`, `trend_50d`, `trend_200d`.
+- **Attributes**: 
+  - `market_change_24h`, `market_change_pct_24h`
+  - `trend_50d`, `trend_200d`
+  - `low_limit_set`, `low_limit_reached`
+  - `high_limit_set`, `high_limit_reached`
 *(Requires "Show Watchlist Items" to be enabled in configuration)*
 
 ### 5. Price Limit Configuration (Inputs)
-For every Holding and Watchlist item, the integration creates two **Number** entities that allow you to set price targets directly from Home Assistant. You can use these in automations to send notifications when a price crosses your limit.
+For every Holding and Watchlist item, the integration creates two **Number** entities that allow you to set price targets directly from Home Assistant.
 
 - **[Ticker] - Low Limit**
 - **[Ticker] - High Limit**
 
+When you set a value in these number entities, the corresponding main Sensor (Holding or Watchlist) immediately updates its attributes:
+- **`low_limit_set` / `high_limit_set`**: Displays the limit value you set (or `false` if not set).
+- **`low_limit_reached`**: Becomes `true` if the value drops to or below your limit.
+- **`high_limit_reached`**: Becomes `true` if the value rises to or above your limit.
+
+### 6. Using Price Alerts in Automations
+Because the alert logic is built directly into the sensors, you can create a single, powerful automation to handle notifications for ALL your assets at once, without needing to reference the number entities.
+
+**Example Automation:**
+Trigger when *any* Ghostfolio sensor's `low_limit_reached` attribute turns true.
+
+```yaml
+alias: "Ghostfolio - Low Limit Alert"
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.watchlist_apple_inc
+      - sensor.isa_tesla_inc
+      # Add your sensors here or use a template/group
+    attribute: low_limit_reached
+    to: true
+action:
+  - service: notify.mobile_app_my_phone
+    data:
+      title: "Price Alert: {{ trigger.to_state.attributes.friendly_name }}"
+      message: "{{ trigger.to_state.attributes.friendly_name }} has dropped below your limit of {{ trigger.to_state.attributes.low_limit_set }}. Current value: {{ trigger.to_state.state }} {{ trigger.to_state.attributes.currency_base }}"
+```
 **Entity Organization:**
 These entities are grouped into **Devices** based on their Account (e.g., "ISA", "Watchlist").
 - **Friendly Name**: `AAPL - High Limit`
