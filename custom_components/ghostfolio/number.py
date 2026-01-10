@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -11,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
 
 from . import GhostfolioDataUpdateCoordinator
@@ -132,13 +134,16 @@ class GhostfolioLimitNumber(CoordinatorEntity, RestoreNumber):
         self.config_entry = config_entry
         self._attr_unique_id = unique_id
         
+        self.account_id = account_id
+        self.symbol = symbol
+        self.limit_type = limit_type
+        
         # Store account name for the attribute
         self.account_name = account_name
         
         # Entity Name: "AAPL - Low Limit"
         self._attr_name = f"{symbol} - {limit_type.capitalize()} Limit"
         
-        self._limit_type = limit_type
         self._attr_native_value = None
         
         self.portfolio_name = config_entry.data.get(CONF_PORTFOLIO_NAME, "Ghostfolio")
@@ -169,3 +174,27 @@ class GhostfolioLimitNumber(CoordinatorEntity, RestoreNumber):
         """Update the current value."""
         self._attr_native_value = value
         self.async_write_ha_state()
+        
+        # --- TRIGGER SENSOR UPDATE ---
+        # When limit changes, we want the sensor attributes to update immediately.
+        # We can find the sensor by reversing the unique_id logic.
+        
+        registry = er.async_get(self.hass)
+        safe_symbol = slugify(self.symbol)
+        
+        sensor_unique_id = None
+        if self.account_id == "watchlist_scope":
+            sensor_unique_id = f"ghostfolio_watchlist_{safe_symbol}_{self.config_entry.entry_id}"
+        else:
+            sensor_unique_id = f"ghostfolio_holding_{self.account_id}_{safe_symbol}_{self.config_entry.entry_id}"
+            
+        if sensor_unique_id:
+            entity_id = registry.async_get_entity_id("sensor", DOMAIN, sensor_unique_id)
+            if entity_id:
+                # Force the sensor to update its state (re-read attributes)
+                # 'update_entity' service calls async_update_ha_state() on the entity
+                await self.hass.services.async_call(
+                    "homeassistant", 
+                    "update_entity", 
+                    {"entity_id": entity_id}
+                )
