@@ -9,5 +9,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/alfwro13/ghostfolio_ha_integration/issues",
   "requirements": ["aiohttp>=3.8.0"],
-  "version": "0.8.3"
+  "version": "0.8.4-beta1"
 }
