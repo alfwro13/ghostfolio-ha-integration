@@ -78,11 +78,6 @@ When you set a value in these number entities, the corresponding main Sensor (Ho
 - **`low_limit_reached`**: Becomes `true` if the value drops to or below your limit.
 - **`high_limit_reached`**: Becomes `true` if the value rises to or above your limit.
 
-**Entity Organization:**
-These entities are grouped into **Devices** based on their Account (e.g., "ISA", "Watchlist").
-- **Friendly Name**: `AAPL - High Limit`
-- **Entity ID**: `number.isa_aapl_high_limit`
-
 ### 6. Using Price Alerts in Automations
 Because the alert logic is built directly into the sensors, you can create a single, powerful automation to handle notifications for ALL your assets at once, without needing to reference the number entities.
 
