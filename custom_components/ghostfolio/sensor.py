@@ -79,6 +79,7 @@ async def async_setup_entry(
             if show_accounts:
                 account_sensors = [
                     GhostfolioAccountValueSensor(coordinator, config_entry, account),
+                    GhostfolioAccountNetWorthSensor(coordinator, config_entry, account),  # <--- NEW SENSOR ADDED HERE
                     GhostfolioAccountCostSensor(coordinator, config_entry, account),
                     GhostfolioAccountPerformanceSensor(coordinator, config_entry, account),
                     GhostfolioAccountTWRSensor(coordinator, config_entry, account),
@@ -411,12 +412,22 @@ class GhostfolioAccountValueSensor(GhostfolioAccountBaseSensor):
             return None
         return self.account_performance_data.get("currentValueInBaseCurrency")
 
+class GhostfolioAccountNetWorthSensor(GhostfolioAccountBaseSensor):
+    """Sensor for Account Net Worth (Invested + Cash)."""
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator, config_entry, account_data):
+        super().__init__(coordinator, config_entry, account_data)
+        self._attr_unique_id = f"ghostfolio_account_net_worth_{self.account_id}_{config_entry.entry_id}"
+        self._attr_name = f"{self.account_name} Net Worth"
+
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the account net worth (Value + Cash)."""
-        if not self.coordinator.data:
+    def native_value(self) -> float | None:
+        if not self.is_account_healthy:
             return None
-        return {"current_net_worth": self.account_performance_data.get("currentNetWorth")}
+        return self.account_performance_data.get("currentNetWorth")
 
 class GhostfolioAccountCostSensor(GhostfolioAccountBaseSensor):
     _attr_device_class = SensorDeviceClass.MONETARY
