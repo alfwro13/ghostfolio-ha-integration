@@ -17,7 +17,7 @@
         },
         "data_description": {
           "portfolio_name": "Ein benutzerfreundlicher Name für diese Portfolio-Instanz",
-          "base_url": "Die URL Ihrer Ghostfolio-Instanz (z.B. https://ihr-ghostfolio.com)",
+          "base_url": "Die URL Ihrer Ghostfolio-Instanz",
           "access_token": "Ihr Ghostfolio-Zugangstoken für die API-Authentifizierung",
           "show_totals": "Sensoren für die Gesamtleistung des Portfolios erstellen",
           "show_accounts": "Sensoren für jedes in Ghostfolio gefundene Konto erstellen",
@@ -43,7 +43,7 @@
         },
         "data_description": {
           "portfolio_name": "Ein benutzerfreundlicher Name für diese Portfolio-Instanz",
-          "base_url": "Die URL Ihrer Ghostfolio-Instanz (z.B. https://ihr-ghostfolio.com)",
+          "base_url": "Die URL Ihrer Ghostfolio-Instanz",
           "access_token": "Ihr Ghostfolio-Zugangstoken für die API-Authentifizierung",
           "show_totals": "Sensoren für die Gesamtleistung des Portfolios erstellen",
           "show_accounts": "Sensoren für jedes in Ghostfolio gefundene Konto erstellen",
