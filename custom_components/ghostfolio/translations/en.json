@@ -17,7 +17,7 @@
         },
         "data_description": {
           "portfolio_name": "A friendly name for this portfolio instance",
-          "base_url": "The URL of your Ghostfolio instance (e.g., https://your-ghostfolio.com)",
+          "base_url": "The URL of your Ghostfolio instance",
           "access_token": "Your Ghostfolio access token for API authentication",
           "show_totals": "Create sensors for the total portfolio performance",
           "show_accounts": "Create sensors for each individual account found in Ghostfolio",
@@ -43,7 +43,7 @@
         },
         "data_description": {
           "portfolio_name": "A friendly name for this portfolio instance",
-          "base_url": "The URL of your Ghostfolio instance (e.g., https://your-ghostfolio.com)",
+          "base_url": "The URL of your Ghostfolio instance",
           "access_token": "Your Ghostfolio access token for API authentication",
           "show_totals": "Create sensors for the total portfolio performance",
           "show_accounts": "Create sensors for each individual account found in Ghostfolio",
